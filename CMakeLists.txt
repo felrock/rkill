@@ -8,6 +8,11 @@ project(KillProcesses VERSION 1.0)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+# Add clang-tidy as a CMake option
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+    set(CMAKE_CXX_CLANG_TIDY "clang-tidy;-checks=*")
+endif()
+
 # Add the executable target
 add_executable(rkill main.cpp)
 
