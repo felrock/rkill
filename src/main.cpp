@@ -10,18 +10,21 @@
 #include <fstream>
 #include <sstream>
 
-struct ProcessInfo {
+struct ProcessInfo
+{
     pid_t pid;
     std::string name;
 };
 
 // Function to check if a given process name contains the partial name
-bool processMatches(const std::string& processName, const std::string& partialName) {
+bool processMatches(const std::string& processName, const std::string& partialName)
+{
     return processName.find(partialName) != std::string::npos;
 }
 
 // Function to get the name of a process given its PID
-std::string getProcessName(pid_t pid) {
+std::string getProcessName(pid_t pid)
+{
     std::string procPath = "/proc/" + std::to_string(pid) + "/comm";
     std::ifstream procFile(procPath);
     if (procFile.is_open()) {
