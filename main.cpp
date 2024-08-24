@@ -129,7 +129,8 @@ int main(int argc, char* argv[]) {
                     std::cerr << "Failed to terminate process " << process.name << " (PID: " << process.pid << ")" << std::endl;
                 }
             }
-        } else {
+        } else
+        {
             std::cout << "No processes were terminated." << std::endl;
         }
     }
