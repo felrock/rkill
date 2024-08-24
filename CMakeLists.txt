@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Add the executable target
-add_executable(kill_processes main.cpp)
+add_executable(rkill main.cpp)
 
 # Add compile options for more warnings (optional)
-target_compile_options(kill_processes PRIVATE -Wall -Wextra -pedantic)
+target_compile_options(rkill PRIVATE -Wall -Wextra -pedantic)
