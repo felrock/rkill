@@ -21,4 +21,4 @@ jobs:
     - name: Run clang-tidy
       run: |
         cd build
-        find .. -name '*.cpp' | xargs clang-tidy -p .
+        find ../src -name '*.cpp' | xargs clang-tidy -p .

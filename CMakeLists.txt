@@ -14,7 +14,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "GNU")
 endif()
 
 # Add the executable target
-add_executable(rkill main.cpp)
+add_executable(rkill src/main.cpp)
 
 # Add compile options for more warnings (optional)
 target_compile_options(rkill PRIVATE -Wall -Wextra -pedantic)
