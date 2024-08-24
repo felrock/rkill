@@ -10,6 +10,8 @@
 #include <fstream>
 #include <sstream>
 
+namespace rkill {
+
 struct ProcessInfo
 {
     pid_t pid;
@@ -27,7 +29,8 @@ auto get_process_name(pid_t pid) -> std::string
 {
     std::string proc_path = "/proc/" + std::to_string(pid) + "/comm";
     std::ifstream proc_file(proc_path);
-    if (proc_file.is_open()) {
+    if (proc_file.is_open())
+    {
         std::string name;
         std::getline(proc_file, name);
         return name;
@@ -36,21 +39,27 @@ auto get_process_name(pid_t pid) -> std::string
 }
 
 // Function to find processes that match the partial name
-auto find_processes_by_name(const std::string& partialName) -> std::vector<ProcessInfo> {
+auto find_processes_by_name(const std::string& partialName) -> std::vector<ProcessInfo>
+{
     std::vector<ProcessInfo> matching_processes;
     DIR* proc_dir = opendir("/proc");
-    if (proc_dir == nullptr) {
+    if (proc_dir == nullptr)
+    {
         std::cerr << "Error: Unable to open /proc directory!" << std::endl;
         return matching_processes;
     }
 
     struct dirent* entry;
-    while ((entry = readdir(proc_dir)) != nullptr) {
-        if (entry->d_type == DT_DIR) {
+    while ((entry = readdir(proc_dir)) != nullptr)
+    {
+        if (entry->d_type == DT_DIR)
+        {
             pid_t pid = atoi(entry->d_name);
-            if (pid > 0) {  // Skip non-PID entries
+            if (pid > 0)
+            {   // Skip non-PID entries
                 std::string process_name = get_process_name(pid);
-                if (process_matches(process_name, partialName)) {
+                if (process_matches(process_name, partialName))
+                {
                     matching_processes.push_back({ pid, process_name });
                 }
             }
@@ -61,16 +70,18 @@ auto find_processes_by_name(const std::string& partialName) -> std::vector<Proce
 }
 
 // Function to kill a process given its PID using SIGKILL
-auto kill_process(pid_t pid) -> bool {
+auto kill_process(pid_t pid) -> bool
+{
     return kill(pid, SIGKILL) == 0;
 }
 
 // Function to parse a comma-separated string of numbers
-auto parse_numbers(const std::string& input) -> std::vector<int> {
+auto parse_numbers(const std::string& input) -> std::vector<int>
+{
     std::vector<int> numbers;
-    std::stringstream ss(input);
+    std::stringstream sstream(input);
     std::string item;
-    while (std::getline(ss, item, ',')) {
+    while (std::getline(sstream, item, ',')) {
         try {
             numbers.push_back(std::stoi(item));
         } catch (const std::invalid_argument&) {
@@ -80,8 +91,64 @@ auto parse_numbers(const std::string& input) -> std::vector<int> {
     return numbers;
 }
 
-auto main(int argc, char* argv[]) -> int {
-    if (argc < 2) {
+void list_and_select_kill(std::vector<ProcessInfo> const& processes)
+{
+    std::cout << "Found the following processes:" << std::endl;
+    for (size_t i = 0; i < processes.size(); ++i)
+    {
+        std::cout << i + 1 << ". " << processes[i].name << " (PID: " << processes[i].pid << ")" << std::endl;
+    }
+
+    std::cout << "Enter the numbers of the processes you want to terminate (comma-separated): ";
+
+    std::string input;
+    std::cin >> input;
+    std::vector<int> numbers = parse_numbers(input);
+    for (int number : numbers) {
+        if (number > 0 && static_cast<size_t>(number) <= processes.size()) {
+            pid_t pid = processes[number - 1].pid;
+            if (kill_process(pid)) {
+                std::cout << "Terminated process " << processes[number - 1].name << " (PID: " << pid << ")" << std::endl;
+            } else {
+                std::cerr << "Failed to terminate process " << processes[number - 1].name << " (PID: " << pid << ")" << std::endl;
+            }
+        } else {
+            std::cerr << "Invalid process number: " << number << std::endl;
+        }
+    }
+}
+
+void list_and_kill(std::vector<ProcessInfo> const& processes)
+{
+    std::cout << "Do you want to terminate all found processes? (y/n): ";
+
+    char choice;
+    std::cin >> choice;
+    if (choice == 'y')
+    {
+        for (const auto& process : processes)
+        {
+            if (kill_process(process.pid))
+            {
+                std::cout << "Terminated process " << process.name << " (PID: " << process.pid << ")" << std::endl;
+            }
+            else
+            {
+                std::cerr << "Failed to terminate process " << process.name << " (PID: " << process.pid << ")" << std::endl;
+            }
+        }
+    }
+    else
+    {
+        std::cout << "No processes were terminated." << std::endl;
+    }
+}
+}  // namespace rkill
+
+auto main(int argc, char* argv[]) -> int
+{
+    if (argc < 2)
+    {
         std::cerr << "Usage: " << argv[0] << " <partial_process_name> [--list]" << std::endl;
         return 1;
     }
@@ -89,53 +156,21 @@ auto main(int argc, char* argv[]) -> int {
     std::string partial_name = argv[1];
     bool list_only = (argc == 3 && std::string(argv[2]) == "--list");
 
-    std::vector<ProcessInfo> processes = find_processes_by_name(partial_name);
+    std::vector<rkill::ProcessInfo> processes = rkill::find_processes_by_name(partial_name);
 
-    if (processes.empty()) {
+    if (processes.empty())
+    {
         std::cout << "No processes found with the partial name \"" << partial_name << "\"." << std::endl;
         return 0;
     }
 
-    if (list_only) {
-        std::cout << "Found the following processes:" << std::endl;
-        for (size_t i = 0; i < processes.size(); ++i) {
-            std::cout << i + 1 << ". " << processes[i].name << " (PID: " << processes[i].pid << ")" << std::endl;
-        }
-
-        std::cout << "Enter the numbers of the processes you want to terminate (comma-separated): ";
-        std::string input;
-        std::cin >> input;
-
-        std::vector<int> numbers = parse_numbers(input);
-        for (int number : numbers) {
-            if (number > 0 && static_cast<size_t>(number) <= processes.size()) {
-                pid_t pid = processes[number - 1].pid;
-                if (kill_process(pid)) {
-                    std::cout << "Terminated process " << processes[number - 1].name << " (PID: " << pid << ")" << std::endl;
-                } else {
-                    std::cerr << "Failed to terminate process " << processes[number - 1].name << " (PID: " << pid << ")" << std::endl;
-                }
-            } else {
-                std::cerr << "Invalid process number: " << number << std::endl;
-            }
-        }
-    } else {
-        std::cout << "Do you want to terminate all found processes? (y/n): ";
-        char choice;
-        std::cin >> choice;
-
-        if (choice == 'y' || choice == 'Y') {
-            for (const auto& process : processes) {
-                if (kill_process(process.pid)) {
-                    std::cout << "Terminated process " << process.name << " (PID: " << process.pid << ")" << std::endl;
-                } else {
-                    std::cerr << "Failed to terminate process " << process.name << " (PID: " << process.pid << ")" << std::endl;
-                }
-            }
-        } else
-        {
-            std::cout << "No processes were terminated." << std::endl;
-        }
+    if (list_only)
+    {
+        rkill::list_and_select_kill(processes);
+    }
+    else
+    {
+        rkill::list_and_kill(processes);
     }
 
     return 0;
